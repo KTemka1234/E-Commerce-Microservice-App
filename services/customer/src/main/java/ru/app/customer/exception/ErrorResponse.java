@@ -1,4 +1,4 @@
-package ru.app.customer.dto;
+package ru.app.customer.exception;
 
 import java.util.Map;
 

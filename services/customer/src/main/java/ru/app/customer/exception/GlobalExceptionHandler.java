@@ -6,20 +6,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.app.customer.dto.ErrorResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomerNotFoundException.class)
-    public ResponseEntity<String> handleCustomerNotFoundException(CustomerNotFoundException e) {
+    public ResponseEntity<String> handle(CustomerNotFoundException e) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(e.getMsg());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleCustomerNotFoundException(MethodArgumentNotValidException e) {
+    public ResponseEntity<ErrorResponse> handle(MethodArgumentNotValidException e) {
         HashMap<String, String> errors = new HashMap<>();
         e.getBindingResult().getFieldErrors()
                 .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 
 @RestController
-@RequestMapping("/api/v1/customer")
+@RequestMapping("/api/v1/customers")
 @RequiredArgsConstructor
 public class CustomerController {
     
@@ -46,7 +46,7 @@ public class CustomerController {
         return ResponseEntity.ok(service.existsById(customerId));
     }
     
-    @GetMapping("/exists/{customer_id}")
+    @GetMapping("/{customer_id}")
     public ResponseEntity<CustomerResponse> findById(@PathVariable("customer_id") String customerId) {
         return ResponseEntity.ok(service.findById(customerId));
     }
