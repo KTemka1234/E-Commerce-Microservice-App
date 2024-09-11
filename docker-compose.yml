@@ -39,12 +39,43 @@ services:
       - 8081:8081
     restart: unless-stopped
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper
+    container_name: zookeeper
+    environment:
+      - ZOOKEEPER_SERVER_ID=1
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    ports:
+      - 2181:2181
+    networks:
+      - micro-net
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka
+    container_name: kafka
+    environment:
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTIONS_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTIONS_STATE_LOG_MIN_ISR=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper
+    restart: unless-stopped
+
   mail-dev:
     image: maildev/maildev
     container_name: mail_dev
     ports:
       - 1080:1080
       - 1025:1025
+    networks:
+      - micro-net
     restart: unless-stopped
 
 networks:
