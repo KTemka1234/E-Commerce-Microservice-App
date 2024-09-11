@@ -1,7 +1,6 @@
 package ru.app.product.mapper;
 
 import org.springframework.stereotype.Service;
-import jakarta.validation.constraints.NotNull;
 import ru.app.product.dto.ProductPurchaseResponse;
 import ru.app.product.dto.ProductRequest;
 import ru.app.product.dto.ProductResponse;
