@@ -2,41 +2,68 @@ services:
   postgres:
     image: postgres
     container_name: postgres
+    healthcheck:
+      test: "pg_isready -d postgres -U ${POSTGRES_USER}"
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - PGDATA=/var/lib/postgresql/data
+      - POSTGRES_DB=keycloak
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - PGDATA=/data/postgres
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/data/postgres
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - 5432:5432
     networks:
       - micro-net
     restart: unless-stopped
   
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - ./pgadmin_data:/data/pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - micro-net
+    restart: unless-stopped
+
   mongodb:
     image: mongo
     container_name: mongodb
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-root}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-password}
     volumes:
-      - ./mongo_data:/mongo_data
+      - ./mongo_data:/data/mongodb
     ports:
       - 27017:27017
+    networks:
+      - micro-net
     restart: unless-stopped
     
   mongo-express:
     image: mongo-express
     container_name: mongo_express
     environment:
-      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER}
-      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD}
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_USER}
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASSWORD}
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER:-root}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD:-password}
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_USER:-root}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASSWORD:-password}
       - ME_CONFIG_MONGODB_SERVER=mongodb
     ports:
       - 8081:8081
+    networks:
+      - micro-net
     restart: unless-stopped
 
   zookeeper:
@@ -57,16 +84,32 @@ services:
     container_name: kafka
     environment:
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
-      - KAFKA_TRANSACTIONS_STATE_LOG_REPLICATION_FACTOR=1
-      - KAFKA_TRANSACTIONS_STATE_LOG_MIN_ISR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9093,PLAINTEXT_HOST://localhost:9092
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:9092
     ports:
       - 9092:9092
+      - 9093:9093
+    networks:
+      - micro-net
     depends_on:
       - zookeeper
     restart: unless-stopped
+  
+  kafka-manager:
+    image: hlebalbau/kafka-manager:latest
+    container_name: kafka-manager
+    ports:
+      - "9000:9000"
+    environment:
+      ZK_HOSTS: zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - micro-net
 
   mail-dev:
     image: maildev/maildev
@@ -74,6 +117,35 @@ services:
     ports:
       - 1080:1080
       - 1025:1025
+    networks:
+      - micro-net
+    restart: unless-stopped
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - micro-net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak
+    container_name: keycloak
+    command: start-dev
+    environment:
+      DB_VENDOR: postgres
+      DB_ADDR: postgres
+      DB_DATABASE: keycloak
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      # KC_HOSTNAME: keycloak  # for spring_active_profile=docker
+    volumes:
+      - ./keycloak_data:/opt/keycloak/data
+    ports:
+      - 8080:8080
     networks:
       - micro-net
     restart: unless-stopped

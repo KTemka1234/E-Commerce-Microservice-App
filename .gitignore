@@ -23,9 +23,10 @@
 hs_err_pid*
 replay_pid*
 
-pgadmin
+pgadmin_data
 postgres_data
 mongo_data
+keycloak_data
 .env
 
 target/

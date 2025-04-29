@@ -15,7 +15,7 @@ public class PaymentService {
 
     private final PaymentRepository repository;
     private final PaymentMapper mapper;
-    private NotificationProducer notificationProducer;
+    private final NotificationProducer notificationProducer;
 
     public Integer createPayment(PaymentRequest request) {
         Payment payment = repository.save(mapper.toPayment(request));

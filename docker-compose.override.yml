@@ -1,0 +1,156 @@
+services:
+  config-server:
+    build:
+      context: ./services/config-server
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    healthcheck:
+      test: "curl --silent --fail config-server:8888/actuator/health | grep UP || exit 1"
+      interval: 5s
+      timeout: 2s
+      retries: 5
+      start_period: 10s
+    networks:
+      - micro-net
+    restart: unless-stopped
+  
+  eureka-server:
+    build:
+      context: ./services/discovery
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --silent --fail eureka-server:8761/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8761:8761"
+    networks:
+      - micro-net
+    restart: unless-stopped
+
+  customer-service:
+    build:
+      context: ./services/customer
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --silent --fail customer-service:8090/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - micro-net
+    restart: unless-stopped
+  
+  notification-service:
+    build:
+      context: ./services/notification
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --silent --fail notification-service:8040/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - micro-net
+    restart: unless-stopped
+  
+  order-service:
+    build:
+      context: ./services/order
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --silent --fail order-service:8070/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - micro-net
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: ./services/payment
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --silent --fail payment-service:8060/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - micro-net
+    restart: unless-stopped
+  
+  product-service:
+    build:
+      context: ./services/product
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --silent --fail product-service:8050/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - micro-net
+    restart: unless-stopped
+  
+  gateway-service:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --silent --fail gateway-service:8222/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "8222:8222"
+    networks:
+      - micro-net
+    restart: unless-stopped

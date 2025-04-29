@@ -12,4 +12,6 @@
             "database": "product"
         }
     ],
+    "java.compile.nullAnalysis.mode": "automatic",
+    "maven.view": "flat",
 }
